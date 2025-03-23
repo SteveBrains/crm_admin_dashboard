@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "author": {
-    "name": "Kiran",
-    "url": "https://github.com/Kiranism"
+    "name": "Sreenivas K"
+    
   },
   "scripts": {
     "dev": "next dev --turbopack",
