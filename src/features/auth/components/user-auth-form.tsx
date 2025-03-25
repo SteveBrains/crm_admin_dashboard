@@ -24,9 +24,9 @@ import {
   signInWithPhoneNumber,
   UserCredential
 } from 'firebase/auth';
-import { auth as a } from '@/lib/auth.config';
+import clientAuth from '@/lib/firebaseClient';
 
-const auth = a;
+const auth = clientAuth;
 
 const formSchema = z.object({
   phone: z.string().min(10, { message: 'Enter a valid phone number' }),
@@ -69,6 +69,8 @@ export default function UserAuthForm() {
         const result = await signInWithPhoneNumber(
           auth,
           data.phone,
+          // @ts-ignore
+
           window.recaptchaVerifier
         );
         setConfirmationResult(result);
