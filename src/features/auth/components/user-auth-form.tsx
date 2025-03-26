@@ -38,7 +38,7 @@ type UserFormValue = z.infer<typeof formSchema>;
 export default function UserAuthForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl');
-  const [loading, startTransition] = useTransition();
+  const [loading, setLoading] = useState(false);
   const [confirmationResult, setConfirmationResult] = useState<any>(null);
 
   const form = useForm<UserFormValue>({
@@ -63,19 +63,24 @@ export default function UserAuthForm() {
     }
   }, []);
   const onSubmit = async (data: UserFormValue) => {
+    setLoading(false);
+    const phone = `+91${data.phone}`;
     try {
       if (!confirmationResult) {
+        setLoading(true);
         // @ts-ignore
         const result = await signInWithPhoneNumber(
           auth,
-          data.phone,
+          phone,
           // @ts-ignore
 
           window.recaptchaVerifier
         );
         setConfirmationResult(result);
+        setLoading(false);
         toast.success('OTP sent successfully!');
       } else {
+        setLoading(true);
         // Verify OTP
         const userCredential = await confirmationResult.confirm(data.otp);
         const idToken = await userCredential.user.getIdToken();
@@ -83,19 +88,23 @@ export default function UserAuthForm() {
         // Send ID Token to NextAuth instead of OTP
         const res = await signIn('credentials', {
           idToken, // Send Firebase ID Token instead of OTP
-          phone: data.phone,
+          phone,
           callbackUrl: callbackUrl ?? '/dashboard'
         });
 
         if (res?.error) {
           toast.error('Authentication failed');
+          setLoading(false);
         } else {
           toast.success('Signed In Successfully!');
+          setLoading(false);
         }
+        setLoading(false);
       }
     } catch (error) {
       toast.error('OTP verification failed');
       console.error('Error:', error);
+      setLoading(false);
     }
   };
 
@@ -125,10 +134,13 @@ export default function UserAuthForm() {
               </FormItem>
             )}
           />
-
           {!confirmationResult ? (
-            <Button disabled={loading} className='ml-auto w-full' type='submit'>
-              Send OTP
+            <Button
+              disabled={loading}
+              className='mt-2 ml-auto w-full cursor-pointer'
+              type='submit'
+            >
+              {loading ? 'Loading...' : 'Send OTP'}
             </Button>
           ) : (
             <>
@@ -154,10 +166,10 @@ export default function UserAuthForm() {
 
               <Button
                 disabled={loading}
-                className='ml-auto w-full'
+                className='mt-2 ml-auto w-full cursor-pointer'
                 type='submit'
               >
-                Verify OTP
+                {loading ? 'Loading...' : 'Verify OTP'}
               </Button>
             </>
           )}
@@ -166,18 +178,6 @@ export default function UserAuthForm() {
           <div id='recaptcha-container'></div>
         </form>
       </Form>
-
-      <div className='relative'>
-        <div className='absolute inset-0 flex items-center'>
-          <span className='w-full border-t' />
-        </div>
-        <div className='relative flex justify-center text-xs uppercase'>
-          <span className='bg-background text-muted-foreground px-2'>
-            Or continue with
-          </span>
-        </div>
-      </div>
-      <GithubSignInButton />
     </>
   );
 }
